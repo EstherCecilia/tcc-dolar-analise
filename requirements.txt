@@ -1,0 +1,6 @@
+pandas
+numpy
+statsmodels
+scikit-learn
+tensorflow
+pandas_ta
