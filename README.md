@@ -1,0 +1,1 @@
+# tcc-dolar-analise
