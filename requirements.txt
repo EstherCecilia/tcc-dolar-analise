@@ -4,3 +4,4 @@ statsmodels
 scikit-learn
 tensorflow
 pandas_ta
+sklearn

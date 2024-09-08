@@ -1,9 +1,13 @@
 import pandas as pd
 import numpy as np
+import math
+
 from statsmodels.tsa.arima.model import ARIMA
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.preprocessing.sequence import TimeseriesGenerator
+from tensorflow.keras.callbacks import EarlyStopping
 
 # Tentar ler o CSV com uma codificação alternativa
 df = pd.read_csv('ABEV3_B_0_1min.csv', sep=';', header=0, encoding='ISO-8859-1', on_bad_lines='skip')
@@ -30,10 +34,16 @@ for coluna in colunas_para_converter:
 df['Data_Hora'] = pd.to_datetime(df['Data'] + ' ' + df['Hora'], format='%d/%m/%Y %H:%M:%S', dayfirst=True)
 
 # Ordenar os dados por Data_Hora (caso não estejam ordenados)
-df = df.sort_values('Data_Hora')
+df_out = df.sort_values('Data_Hora', ascending=False)
+# Calcula o número de linhas correspondentes a 20%
+num_linhas = math.ceil(len(df) * 0.2)
 
-# Exibir as colunas
-print(df.columns)
+# Obtém os primeiros 20%
+primeiros_20_porcento = df.head(30)
+df_to_analyse = primeiros_20_porcento
+
+print("\n============================= INICIO ==================================")
+print("=======================================================================")
 
 def analisar_decisao_media(df_periodo):
     sma = df_periodo['Fechamento'].mean()
@@ -41,7 +51,7 @@ def analisar_decisao_media(df_periodo):
     vwap = (df_periodo['Fechamento'] * df_periodo['Volume']).sum() / df_periodo['Volume'].sum()
     ultimo_preco = df_periodo['Fechamento'].iloc[-1]
 
-    # Cruzamento de Médias Móveis (Golden Cross e Death Cross)e vwap como suporte e resistência
+    # Cruzamento de Médias Móveis (Golden Cross e Death Cross) e vwap como suporte e resistência
     if ema > sma and ultimo_preco > vwap:
         decisao = 'Compra'
     elif ema < sma and ultimo_preco < vwap:
@@ -76,36 +86,33 @@ def analisar_decisao_arima(df_periodo, order=(0, 1, 1)):
 
     return decisao
 
-def analisar_decisao_lstm(df_periodo, periodo=60):
+def analisar_decisao_lstm(df_periodo, periodo=4, epochs=5, batch_size=32):
     # Preparar os dados para o LSTM
     dados = df_periodo['Fechamento'].values.reshape(-1, 1)
     scaler = MinMaxScaler(feature_range=(0, 1))
     dados_normalizados = scaler.fit_transform(dados)
 
-    # Criar sequências para o LSTM
-    X = []
-    for i in range(periodo, len(dados_normalizados)):
-        X.append(dados_normalizados[i-periodo:i, 0])
-    X = np.array(X)
-
     # Verificar se há dados suficientes para o LSTM
-    if X.shape[0] == 0:
+    if len(dados_normalizados) <= periodo or len(df_to_analyse) < len(dados_normalizados):
         print(f"Dados insuficientes para o período de {periodo} minutos.")
         return 'Manter'  # Retorna 'Manter' se não houver dados suficientes
 
-    # Reshape para o formato [samples, time steps, features]
-    X = np.reshape(X, (X.shape[0], X.shape[1], 1))
+    # Criar o gerador de séries temporais
+    generator = TimeseriesGenerator(dados_normalizados, dados_normalizados, length=periodo, batch_size=batch_size)
 
     # Construir o modelo LSTM
     model = Sequential()
-    model.add(LSTM(units=50, return_sequences=True, input_shape=(X.shape[1], 1)))
+    model.add(LSTM(units=50, return_sequences=True, input_shape=(periodo, 1)))
     model.add(LSTM(units=50))
     model.add(Dense(units=1))
 
     model.compile(optimizer='adam', loss='mean_squared_error')
 
+    # Usar Early Stopping para evitar o treinamento excessivo
+    early_stopping = EarlyStopping(monitor='loss', patience=3)
+
     # Treinar o modelo
-    model.fit(X, dados_normalizados[periodo:], epochs=20, batch_size=32, verbose=0)
+    model.fit(generator, epochs=epochs, batch_size=batch_size, verbose=0, callbacks=[early_stopping])
 
     # Fazer a previsão
     previsao_normalizada = model.predict(np.reshape(dados_normalizados[-periodo:], (1, periodo, 1)))
@@ -124,22 +131,16 @@ def analisar_decisao_lstm(df_periodo, periodo=60):
 
     return decisao
 
-import warnings
-
-# Suprimir todos os warnings
-warnings.filterwarnings('ignore')
-
-
 def verificar_acertos(df, periodos, analisar_decisao):
     resultados = []
 
     for periodo in periodos:
         print(f"Verificando acertos para período de {periodo} minutos")
-        for i in range(len(df) - periodo):
-            df_periodo = df.iloc[i:i+periodo]
+        for i in range(0, len(df), periodo):
+            df_periodo = df_out.iloc[i:i+periodo]
             decisao = analisar_decisao(df_periodo)
-            preco_atual = df['Fechamento'].iloc[i+periodo-1]
-            proximo_preco = df['Fechamento'].iloc[i+periodo]
+            preco_atual = df_out['Fechamento'].iloc[i+periodo-1]
+            proximo_preco = df_out['Fechamento'].iloc[i+periodo]
 
             if decisao == 'Compra' and proximo_preco > preco_atual:
                 acerto = 'Sim'
@@ -151,14 +152,12 @@ def verificar_acertos(df, periodos, analisar_decisao):
                 acerto = 'Não'
 
             resultados.append({
-                'Data_Hora': df['Data_Hora'].iloc[i+periodo-1],
+                'Data_Hora': df_out['Data_Hora'].iloc[i+periodo-1],
                 'Decisão': decisao,
                 'Valor_Dolar_Atual': preco_atual,
                 'Valor_Dolar_Futuro': proximo_preco,
                 'Acertou': acerto
             })
-
-
 
     return pd.DataFrame(resultados)
 
@@ -167,17 +166,16 @@ def valida_porcentagem(resultado_df):
   percentage = (len(filtered_df) / len(resultado_df)) * 100
   print(f"Percentagem de acertos: {percentage:.2f}%")
 
-periodos = [5, 15, 30,60]
+periodos = [5, 15, 30, 60]
+# periodos = [5]
 print("Média movel")
-resultado_df_media = verificar_acertos(df, periodos, analisar_decisao_media)
+resultado_df_media = verificar_acertos(df_to_analyse, periodos, analisar_decisao_media)
 
 print("LSTM")
-resultado_df_lstm = verificar_acertos(df, periodos, analisar_decisao_lstm)
+resultado_df_lstm = verificar_acertos(df_to_analyse, periodos, analisar_decisao_lstm)
 
 print("ARIMA")
-resultado_df_arima = verificar_acertos(df, periodos, analisar_decisao_arima)
-
-# Imprime porcentagem
+resultado_df_arima = verificar_acertos(df_to_analyse, periodos, analisar_decisao_arima)
 
 print("Resultado Media")
 valida_porcentagem(resultado_df_media)
