@@ -22,3 +22,8 @@ def normalize_data(df):
     df = df.sort_values('Data_Hora', ascending=True)
 
     return df
+    
+def valida_porcentagem(resultado_df, model):
+  filtered_df = resultado_df[resultado_df[f'Acerto_{model}'] == 'Sim']
+  percentage = (len(filtered_df) / len(resultado_df)) * 100
+  print(f"Percentagem de acertos de {model}: {percentage:.2f}%")

@@ -27,14 +27,18 @@ def run(periodo, filepath, percent = 0.2):
     data = average.verificar_acertos(data, periodos)
 
     # ARIMA
-    # data = arima.add_decisions_arima(data)
-    # data = arima.verificar_acertos_arima(data)
+    data = arima.add_decisions_arima(data, periodo)
+    data = arima.verificar_acertos_arima(data)
 
     # LSTM
     # data = lstm.adicionar_decisoes_lstm(data)
 
 
-    print(data.head())
+    preprossing.valida_porcentagem(data, 'SMA')
+    preprossing.valida_porcentagem(data, 'EMA')
+    preprossing.valida_porcentagem(data, 'VWAP')
+    preprossing.valida_porcentagem(data, 'ARIMA')
+    #preprossing.valida_porcentagem(data, 'LSTM')
 
     filepathResult = f'indicadores_{periodo}_' + filepath 
     data.to_csv(filepathResult, index=False, sep=';', encoding='utf-8')

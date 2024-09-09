@@ -24,9 +24,9 @@ def verificar_acertos_arima(df):
                                   else 'Não', axis=1)
     return df
 
-def add_decisions_arima(df, order=(5,1,0)):
+def add_decisions_arima(df, periodo):
     """Função principal para ajustar o modelo ARIMA, gerar decisões e verificar acertos."""
-    df = ajustar_modelo_arima(df, order)
+    df = ajustar_modelo_arima(df, order=(periodo,1,0))
     df = gerar_decisao_arima(df)
     df = verificar_acertos_arima(df)
     return df
