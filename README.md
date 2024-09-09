@@ -16,53 +16,70 @@ Configuração do Ambiente Virtual
 Usando Pipenv
 Instale o Pipenv (caso ainda não tenha instalado):
 
-bash
+```
 pip install pipenv
-Clone o repositório:
 
-bash
+```
+Clone o repositório:
+```
 git clone https://github.com/seu-usuario/nome-do-repositorio.git
 cd nome-do-repositorio
+```
 Crie o ambiente virtual e instale as dependências:
 
-bash
+```
 pipenv install
+```
 Ative o ambiente virtual:
 
-bash
+
+```
 pipenv shell
+
+```
 Usando virtualenv
 Instale o virtualenv (caso ainda não tenha instalado):
 
-bash
+
+```
 pip install virtualenv
+
+```
 Clone o repositório:
 
-bash
+
+```
 git clone https://github.com/seu-usuario/nome-do-repositorio.git
 cd nome-do-repositorio
+
+```
 Crie o ambiente virtual:
 
-bash
+
+```
 virtualenv venv
+
+```
 Ative o ambiente virtual:
 
 No Windows:
-bash
+
+```
 venv\Scripts\activate
+
+```
 No macOS/Linux:
-bash
+
+```
 source venv/bin/activate
+
+```
 Instale as dependências:
 
-bash
+
+```
 pip install -r requirements.txt
+
+```
 Execução
-Após configurar o ambiente virtual, você pode executar os notebooks ou scripts diretamente. Para executar um notebook:
-
-bash
-jupyter notebook notebooks/analise.ipynb
-Para executar um script Python:
-
-bash
-python scripts/nome_do_script.py
+Após configurar o ambiente virtual, você pode executar os scripts diretamente. 
