@@ -10,7 +10,7 @@ def run(periodo, filepath, percent = 0.2):
     df = preprossing.normalize_data(df)
 
 
-    # Obtém os primeiros 20%
+    # Obtém os primeiros x%
     num_linhas = math.ceil(len(df) * percent)
     primeiros_x_porcento = df.head(num_linhas)
     data = primeiros_x_porcento
