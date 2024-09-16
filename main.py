@@ -5,42 +5,46 @@ import average
 import preprossing
 import lstm
 
-def run(periodo, filepath, percent = 0.2):
+def run(period, filepath, path, percent = 0.2):
+    # Lê os dados do arquivo CSV
     df = preprossing.get_data(filepath)
+
+    # Normaliza os dados
     df = preprossing.normalize_data(df)
 
 
-    # Obtém os primeiros x%
+    # Obtém os primeiros 20%
     num_linhas = math.ceil(len(df) * percent)
     primeiros_x_porcento = df.head(num_linhas)
     data = primeiros_x_porcento
 
-    n_forward = periodo 
-    data['Fechamento Futuro'] = data['Fechamento'].shift(-n_forward) # Close periodo minutos ago
+    # Fechamento futuro do período seguinte seguinte 
+    data['Fechamento Futuro'] = data['Fechamento'].shift(-1) 
+
+    # Ganho ou perda com base no período seguinte
     data['Retorno'] = data['Fechamento Futuro'] - data['Fechamento']
 
-    periodos = [periodo]
 
     # (SMA, EMA, VWAP)
-    data = average.add_averages(data, periodos)
-    data = average.generate_decision(data, periodos)
-    data = average.verificar_acertos(data, periodos)
+    data = average.execute(data, period)
 
-    # ARIMA
-    data = arima.add_decisions_arima(data, periodo)
-    data = arima.verificar_acertos_arima(data)
+   # ARIMA
+    data = arima.execute(data, period)
 
-    # LSTM
-    # data = lstm.adicionar_decisoes_lstm(data)
+   # LSTM
+    # data = lstm.execute(data, period)
 
 
-    preprossing.valida_porcentagem(data, 'SMA')
-    preprossing.valida_porcentagem(data, 'EMA')
-    preprossing.valida_porcentagem(data, 'VWAP')
-    preprossing.valida_porcentagem(data, 'ARIMA')
-    #preprossing.valida_porcentagem(data, 'LSTM')
+    print(f"Percentagem de acertos de {path}:")
+    preprossing.valid_percentage(data, 'SMA')
+    preprossing.valid_percentage(data, 'EMA')
+    preprossing.valid_percentage(data, 'VWAP')
+    preprossing.valid_percentage(data, 'ARIMA')
+    # preprossing.valid_percentage(data, 'LSTM')
 
-    filepathResult = f'indicadores_{periodo}_' + filepath 
+    filepathResult = f'report/indicadores_{period}_' + path  + '.csv'
     data.to_csv(filepathResult, index=False, sep=';', encoding='utf-8')
 
-run(30, 'ABEV3_B_0_1min.csv')
+run(30, 'dados/ABEV3_B_0_1min.csv', 'ABEV3_B_0_1min')
+
+# porcentagem ideal: 54%

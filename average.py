@@ -1,11 +1,10 @@
-def add_averages(df, periodos):
-    for periodo in periodos:
-        # Calculando a média móvel simples (SMA) e a média móvel exponencial (EMA)
-        df[f'SMA_{periodo}'] = df['Fechamento'].rolling(window=periodo).mean()
-        df[f'EMA_{periodo}'] = df['Fechamento'].ewm(span=periodo, adjust=False).mean()
+def add_averages(df, period):
+    # Calculando a média móvel simples (SMA) e a média móvel exponencial (EMA)
+    df['SMA'] = df['Fechamento'].rolling(window=period).mean()
+    df['EMA'] = df['Fechamento'].ewm(span=period, adjust=False).mean()
 
-        # VWAP é calculado acumulando (preço * volume) e dividindo pelo volume acumulado
-        df[f'VWAP_{periodo}'] = (df['Fechamento'] * df['Volume']).rolling(window=periodo).sum() / df['Volume'].rolling(window=periodo).sum()
+    # VWAP é calculado acumulando (preço * volume) e dividindo pelo volume acumulado
+    df['VWAP'] = (df['Fechamento'] * df['Volume']).rolling(window=period).sum() / df['Volume'].rolling(window=period).sum()
 
     return df
 
@@ -16,41 +15,46 @@ def decision_by_per(close, indicator):
     elif close < indicator:
         return 'Venda'
     else:
-        return 'Manter'
+        return 'Manter' # Manter se o ganho não for tão grande | gerar uma média de ganho (limiar)
 
 # Função principal para gerar decisões de compra, venda ou manter
-def generate_decision(df, periodos):
-    for periodo in periodos:
-        # Gerando decisões com base na SMA
-        df[f'Decisao_SMA_{periodo}'] = df.apply(lambda row: decision_by_per(row['Fechamento'], row[f'SMA_{periodo}']), axis=1)
+def generate_decision(df, period):
+    df[f'Decisao_SMA'] = df.apply(lambda row: decision_by_per(row['Fechamento'], row['SMA']), axis=1)
 
-        # Gerando decisões com base na EMA
-        df[f'Decisao_EMA_{periodo}'] = df.apply(lambda row: decision_by_per(row['Fechamento'], row[f'EMA_{periodo}']), axis=1)
+    # Gerando decisões com base na EMA
+    df['Decisao_EMA'] = df.apply(lambda row: decision_by_per(row['Fechamento'], row['EMA']), axis=1)
 
-        # Gerando decisões com base na VWAP
-        df[f'Decisao_VWAP_{periodo}'] = df.apply(lambda row: decision_by_per(row['Fechamento'], row[f'VWAP_{periodo}']), axis=1)
+    # Gerando decisões com base na VWAP
+    df['Decisao_VWAP'] = df.apply(lambda row: decision_by_per(row['Fechamento'], row['VWAP']), axis=1)
 
     return df
 
 # Função para verificar se a decisão foi acertada
-def verificar_acerto(decisao, retorno_futuro):
-    if (retorno_futuro > 0 and decisao == 'Compra') or \
-       (retorno_futuro < 0 and decisao == 'Venda') or \
-       (retorno_futuro == 0 and decisao == 'Manter'):
+def check_hit(decision, future_return):
+    if (future_return > 0 and decision == 'Compra') or \
+       (future_return < 0 and decision == 'Venda') or \
+       (future_return == 0 and decision == 'Manter'):
         return 'Sim'
     else:
         return 'Não'
-        
+
 # Função principal para verificar acertos com base em vários períodos
-def verificar_acertos(df, periodos):
-    for periodo in periodos:
-        # Verificando acertos para SMA
-        df[f'Acerto_SMA_{periodo}'] = df.apply(lambda row: verificar_acerto(row[f'Decisao_SMA_{periodo}'], row['Retorno']), axis=1)
+def check_hits(df):
+    # Verificando acertos para SMA
+    df['Acerto_SMA'] = df.apply(lambda row: check_hit(row['Decisao_SMA'], row['Retorno']), axis=1)
 
-        # Verificando acertos para EMA
-        df[f'Acerto_EMA_{periodo}'] = df.apply(lambda row: verificar_acerto(row[f'Decisao_EMA_{periodo}'], row['Retorno']), axis=1)
+    # Verificando acertos para EMA
+    df['Acerto_EMA'] = df.apply(lambda row: check_hit(row['Decisao_EMA'], row['Retorno']), axis=1)
 
-        # Verificando acertos para VWAP
-        df[f'Acerto_VWAP_{periodo}'] = df.apply(lambda row: verificar_acerto(row[f'Decisao_VWAP_{periodo}'], row['Retorno']), axis=1)
+    # Verificando acertos para VWAP
+    df['Acerto_VWAP'] = df.apply(lambda row: check_hit(row['Decisao_VWAP'], row['Retorno']), axis=1)
+
+    return df
+
+
+def execute(df, period):
+    df = add_averages(df, period)
+    df = generate_decision(df, period)
+    df = check_hits(df)
 
     return df
