@@ -67,7 +67,7 @@ def check_accuracies_lstm(df):
                                  else 'Não', axis=1)
     return df
 
-# Exemplo de uso com um DataFrame (df) já carregado
+
 def execute(df, period=30, epochs=10, batch_size=32):
     # Preparar os dados para treino
     X_train, y_train, scaler = prepare_data(df, period)

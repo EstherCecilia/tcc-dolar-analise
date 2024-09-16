@@ -32,15 +32,15 @@ def run(period, filepath, path, percent = 0.2):
     data = arima.execute(data, period)
 
    # LSTM
-    # data = lstm.execute(data, period)
+    data = lstm.execute(data, period)
 
 
-    print(f"Percentagem de acertos de {path}:")
+    print(f"Percentagem de acertos de {path} no periodo {period}")
     preprossing.valid_percentage(data, 'SMA')
     preprossing.valid_percentage(data, 'EMA')
     preprossing.valid_percentage(data, 'VWAP')
     preprossing.valid_percentage(data, 'ARIMA')
-    # preprossing.valid_percentage(data, 'LSTM')
+    preprossing.valid_percentage(data, 'LSTM')
 
     filepathResult = f'report/indicadores_{period}_' + path  + '.csv'
     data.to_csv(filepathResult, index=False, sep=';', encoding='utf-8')
