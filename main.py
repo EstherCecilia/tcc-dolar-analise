@@ -6,6 +6,10 @@ import average
 import preprossing
 import lstm
 
+
+# Suprimir todos os warnings
+warnings.filterwarnings('ignore')
+
 def run(period, filepath, path, percent = 0.2):
     # Lê os dados do arquivo CSV
     df = preprossing.get_data(filepath)
