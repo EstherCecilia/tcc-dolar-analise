@@ -1,10 +1,10 @@
 import pandas as pd
 import warnings
 import math
-import arima
-import average
-import preprossing
-import lstm
+import models.arima as arima
+import models.average as average
+import models.preprossing as preprossing
+import models.lstm as lstm
 
 
 # Suprimir todos os warnings
@@ -50,6 +50,8 @@ def run(period, filepath, path, percent = 0.2):
     filepathResult = f'report/indicadores_{period}_' + path  + '.csv'
     data.to_csv(filepathResult, index=False, sep=';', encoding='utf-8')
 
+# run(30, 'dados/PETR4_B_0_1min.csv', 'PETR4_B_0_1min')
+# run(30, 'dados/CIEL3_B_0_1min.csv', 'CIEL3_B_0_1min')
 run(30, 'dados/ABEV3_B_0_1min.csv', 'ABEV3_B_0_1min')
 
 # porcentagem ideal: 54%
