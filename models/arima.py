@@ -10,8 +10,8 @@ def adjust_arima_model(df, order=(5,1,0)):
 def generate_decision_arima(df):
     # Gera decisões de compra, venda ou manutenção com base nas previsões ARIMA.
     df['Decisao_ARIMA'] = df.apply(lambda row: 
-                                   'Compra' if row['Previsao_ARIMA'] < row['Fechamento'] else
-                                   'Venda' if row['Previsao_ARIMA'] > row['Fechamento'] else
+                                   'Compra' if row['Previsao_ARIMA'] > row['Fechamento'] else
+                                   'Venda' if row['Previsao_ARIMA'] < row['Fechamento'] else
                                    'Manter', axis=1)
     return df
 

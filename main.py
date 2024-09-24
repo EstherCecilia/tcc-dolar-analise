@@ -10,8 +10,9 @@ import models.lstm as lstm
 # Suprimir todos os warnings
 warnings.filterwarnings('ignore')
 
-def run(period, filepath, path, percent = 0.2):
+def run(period, path, percent = 0.2):
     # Lê os dados do arquivo CSV
+    filepath = f'dados/{path}.csv'
     df = preprossing.get_data(filepath)
 
     # Normaliza os dados
@@ -50,8 +51,8 @@ def run(period, filepath, path, percent = 0.2):
     filepathResult = f'report/indicadores_{period}_' + path  + '.csv'
     data.to_csv(filepathResult, index=False, sep=';', encoding='utf-8')
 
-# run(30, 'dados/PETR4_B_0_1min.csv', 'PETR4_B_0_1min')
-# run(30, 'dados/CIEL3_B_0_1min.csv', 'CIEL3_B_0_1min')
-run(30, 'dados/ABEV3_B_0_1min.csv', 'ABEV3_B_0_1min')
+# run(30, 'PETR4_B_0_1min')
+# run(30, 'CIEL3_B_0_1min')
+run(30, 'ABEV3_B_0_1min')
 
 # porcentagem ideal: 54%

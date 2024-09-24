@@ -10,9 +10,9 @@ def add_averages(df, period):
 
 # Função para determinar a decisão com base em um indicador específico
 def decision_by_per(close, indicator):
-    if close > indicator:
+    if close < indicator:
         return 'Compra'
-    elif close < indicator:
+    elif close > indicator:
         return 'Venda'
     else:
         return 'Manter' # Manter se o ganho não for tão grande | gerar uma média de ganho (limiar)
