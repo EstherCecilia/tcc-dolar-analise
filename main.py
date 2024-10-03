@@ -3,20 +3,28 @@ import warnings
 import math
 import models.arima as arima
 import models.average as average
-import models.preprossing as preprossing
+import models.preprocessing as preprocessing
 import models.lstm as lstm
-
 
 # Suprimir todos os warnings
 warnings.filterwarnings('ignore')
 
+function_by_model = {
+    'SMA': average.execute,
+    'EMA': average.execute,
+    'VWAP': average.execute,
+    'ARIMA': arima.execute,
+    'LSTM': lstm.execute
+}
+
+
 def run(period, path, percent = 0.2):
     # Lê os dados do arquivo CSV
     filepath = f'dados/{path}.csv'
-    df = preprossing.get_data(filepath)
+    df = preprocessing.get_data(filepath)
 
     # Normaliza os dados
-    df = preprossing.normalize_data(df)
+    df = preprocessing.normalize_data(df)
 
 
     # Obtém os primeiros 20%
@@ -24,35 +32,36 @@ def run(period, path, percent = 0.2):
     primeiros_x_porcento = df.head(num_linhas)
     data = primeiros_x_porcento
 
-    # Fechamento futuro do período seguinte seguinte 
-    data['Fechamento Futuro'] = data['Fechamento'].shift(-1) 
-
-    # Ganho ou perda com base no período seguinte
-    data['Retorno'] = data['Fechamento Futuro'] - data['Fechamento']
+    # Adiciona o fechamento futuro e o retorno
+    data = preprocessing.generate_close_return(data)  
 
 
     # (SMA, EMA, VWAP)
-    data = average.execute(data, period)
-
-   # ARIMA
-    data = arima.execute(data, period)
-
-   # LSTM
-    data = lstm.execute(data, period)
+    for model in function_by_model:
+        data = function_by_model[model](data, period)
 
 
-    print(f"Percentagem de acertos de {path} no periodo {period}")
-    preprossing.valid_percentage(data, 'SMA')
-    preprossing.valid_percentage(data, 'EMA')
-    preprossing.valid_percentage(data, 'VWAP')
-    preprossing.valid_percentage(data, 'ARIMA')
-    preprossing.valid_percentage(data, 'LSTM')
+    # Adicionar acurácia por ganho ou perda por porcentagem
+    for model in function_by_model.keys():
+        percentage = preprocessing.valid_percentage(data, model)
+        print(f"Percentagem de acertos de {model}: {percentage:.2f}%")
 
-    filepathResult = f'report/indicadores_{period}_' + path  + '.csv'
-    data.to_csv(filepathResult, index=False, sep=';', encoding='utf-8')
 
-# run(30, 'PETR4_B_0_1min')
-# run(30, 'CIEL3_B_0_1min')
+    # Adicionar acurácia por ganho ou perda por valor
+    for model in function_by_model.keys():
+        gain = preprocessing.calculates_gain(data, model)
+        print(f"Ganho de {model}: {gain:.2f}")
+ 
+
+
+    # Salvar os resultados em um arquivo CSV
+    file_path_result = f'report/indicadores_{period}_' + path  + '.csv'
+    data.to_csv(file_path_result, index=False, sep=';', encoding='utf-8')
+
+
 run(30, 'ABEV3_B_0_1min')
+run(30, 'IBOV_B_0_1min')
 
+# Orientações:
 # porcentagem ideal: 54%
+# Comprar por lote (valor multiplicado por 100)
