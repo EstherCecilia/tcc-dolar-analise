@@ -3,6 +3,7 @@ import pandas as pd
 from keras.models import Sequential # Usada para construir e treinar redes neurais.
 from keras.layers import LSTM, Dense
 from sklearn.preprocessing import MinMaxScaler  # Ferramenta do Scikit-Learn para normalizar os dados (transformar os valores entre 0 e 1), o que ajuda no desempenho do LSTM.
+import models.decisions as decisions
 
 # Função para preparar os dados em janelas de tempo (30 minutos, por exemplo)
 def prepare_data(df, period):
@@ -35,38 +36,32 @@ def train_model(X_train, y_train, epochs=10, batch_size=32):
     
     return model
 
-# Função para gerar decisões de compra, venda ou manutenção
-def generate_decisions(df, period, model, scaler):
-    X_test, _, _ = prepare_data(df, period)
-    
-    # Fazendo previsões
-    previsoes = model.predict(X_test)
-    previsoes = scaler.inverse_transform(previsoes)  # Desnormalizar
-    
-    decisoes = []
-    for i in range(len(previsoes)):
-        preco_fechamento_atual = df['Fechamento'].iloc[period + i]
-        previsao_fechamento_futuro = previsoes[i][0]
+def predict_future(df, model, scaler, period):
+    # Normalizar os dados de 'Fechamento'
+    df_scaled = scaler.transform(df[['Fechamento']].values)
+
+    # Inicializar uma lista para armazenar as previsões
+    predictions = []
+
+    # Loop para fazer a previsão a partir do valor no índice 'period'
+    for i in range(period, len(df)):
+        # Selecionar os últimos 'period' valores para fazer a previsão
+        input_data = df_scaled[i-period:i].reshape(1, period, 1)
         
-        # Lógica de decisão
-        if previsao_fechamento_futuro > preco_fechamento_atual:
-            decisoes.append('Compra')
-        elif previsao_fechamento_futuro < preco_fechamento_atual:
-            decisoes.append('Venda')
-        else:
-            decisoes.append('Manter')
+        # Fazer a previsão usando o modelo
+        predicted_scaled = model.predict(input_data)
+        
+        # Inverter a escala da previsão para o valor original
+        predicted = scaler.inverse_transform(predicted_scaled)[0][0]
+        
+        # Armazenar a previsão
+        predictions.append(predicted)
     
-    return decisoes
+    # Preencher a coluna 'LSTM' com NaN nos primeiros 'period' registros (sem previsão) e depois as previsões
+    df['LSTM'] = np.nan
+    df['LSTM'].iloc[period:] = predictions
 
-def check_accuracies_lstm(df):
-    # Verifica a precisão das decisões de LSTM em relação ao retorno futuro.
-    df['Acerto_LSTM'] = df.apply(lambda row: 
-                                 'Sim' if (row['Retorno'] > 0 and row['Decisao_LSTM'] == 'Compra') or
-                                         (row['Retorno'] < 0 and row['Decisao_LSTM'] == 'Venda') or
-                                         (row['Retorno'] == 0 and row['Decisao_LSTM'] == 'Manter') 
-                                 else 'Não', axis=1)
     return df
-
 
 def execute(df, period=30, epochs=10, batch_size=32):
     # Preparar os dados para treino
@@ -75,14 +70,13 @@ def execute(df, period=30, epochs=10, batch_size=32):
     # Treinar o modelo LSTM
     model = train_model(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
-    # Gerar decisões de compra, venda ou manutenção
-    decisoes = generate_decisions(df, period, model, scaler)
+    # Gerar previsões futuras e preencher a coluna 'LSTM'
+    df = predict_future(df, model, scaler, period)
 
-    # Adicionar as decisões ao DataFrame original
-    df_decisoes = df.iloc[period:].copy()  # Ignorar as primeiras linhas sem previsão
-    df_decisoes['Decisao_LSTM'] = decisoes
+    # Gerar decisões de compra, venda ou manter
+    df = decisions.generate_decision(df, ['LSTM'])
 
     # Verificar acertos
-    df_decisoes = check_accuracies_lstm(df_decisoes)
+    df = decisions.check_hits(df, ['LSTM'])
 
-    return df_decisoes
+    return df

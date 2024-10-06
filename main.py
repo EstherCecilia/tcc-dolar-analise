@@ -27,7 +27,7 @@ def run(period, path, percent = 0.2):
     df = preprocessing.normalize_data(df)
 
 
-    # Obtém os primeiros 20%
+    # Obtém os primeiros de acordo com a porcentagem
     num_linhas = math.ceil(len(df) * percent)
     primeiros_x_porcento = df.head(num_linhas)
     data = primeiros_x_porcento
@@ -53,13 +53,14 @@ def run(period, path, percent = 0.2):
         print(f"Ganho de {model}: {gain:.2f}")
  
 
+    data_filtered = data.drop(columns=['valor_aceitavel_fechamento_max', 'valor_aceitavel_fechamento_min', 'valor_aceitavel_retorno_max', 'valor_aceitavel_retorno_min'])
 
     # Salvar os resultados em um arquivo CSV
     file_path_result = f'report/indicadores_{period}_' + path  + '.csv'
-    data.to_csv(file_path_result, index=False, sep=';', encoding='utf-8')
+    data_filtered.to_csv(file_path_result, index=False, sep=';', encoding='utf-8')
 
 
-run(30, 'ABEV3_B_0_1min')
+# run(30, 'ABEV3_B_0_1min')
 run(30, 'IBOV_B_0_1min')
 
 # Orientações:

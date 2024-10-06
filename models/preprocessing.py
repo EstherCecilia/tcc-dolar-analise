@@ -22,27 +22,55 @@ def normalize_data(df):
 
     return df
 
-def generate_close_return(df):
+def calculate_acceptable_value_max(rolling_window):
+    sorted_values = pd.Series(rolling_window).sort_values(ascending=False)
+    quartile_size = int(len(sorted_values) * 0.25)
+    
+    if quartile_size == 0:
+        return None
+    
+    return sorted_values.iloc[0]  # Primeiro valor dos 25% maiores
+
+# Função para calcular o valor aceitável mínimo
+def calculate_acceptable_value_min(rolling_window):
+    sorted_values = pd.Series(rolling_window).sort_values(ascending=False)
+    quartile_size = int(len(sorted_values) * 0.25)
+    
+    if quartile_size == 0:
+        return None
+    
+    return sorted_values.iloc[quartile_size - 1]  # Último valor dos 25% maiores
+
+def generate_close_return(df, period):
     # Fechamento futuro do período seguinte seguinte 
     df['Fechamento Futuro'] = df['Fechamento'].shift(-1) 
 
     # Ganho ou perda com base no período seguinte
     df['Retorno'] = df['Fechamento Futuro'] - df['Fechamento']
 
+    df['valor_aceitavel_retorno_max'] = df['Retorno'].rolling(window=period).apply(calculate_acceptable_value_max, raw=False)
+    df['valor_aceitavel_retorno_min'] = df['Retorno'].rolling(window=period).apply(calculate_acceptable_value_min, raw=False)
+
+    df['valor_aceitavel_fechamento_max'] = df['Fechamento'].rolling(window=period).apply(calculate_acceptable_value_max, raw=False)
+    df['valor_aceitavel_fechamento_min'] = df['Fechamento'].rolling(window=period).apply(calculate_acceptable_value_min, raw=False)
+    
+
     return df
 
-def valid_percentage(resultado_df, model):
+def generate_percentage_by_model(resultado_df, model):
   filtered_df = resultado_df[resultado_df[f'Acerto_{model}'] == 'Sim']
   percentage = (len(filtered_df) / len(resultado_df)) * 100
   return percentage
 
-def calculates_gain(resultado_df, model):
+def calculates_gain_by_model(resultado_df, model):
     filtered_df = resultado_df[resultado_df[f'Acerto_{model}'] == 'Sim']
 
     # Função condicional para tratar as decisões
     def compute_gain(row):
         if row[f'Decisao_{model}'] == 'Venda' and row['Retorno'] < 0: # Quando for Venda e o Retorno negativo  -> Somar Módulo
             return abs(row['Retorno'])
+        elif row[f'Decisao_{model}'] == 'Venda' and row['Retorno'] > 0: 
+            return -abs(row['Retorno'])
         elif row[f'Decisao_{model}'] == 'Manter': # Ignorar quando for "Manter"
             return 0  
         else:
