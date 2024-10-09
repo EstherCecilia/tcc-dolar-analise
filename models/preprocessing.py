@@ -24,7 +24,7 @@ def normalize_data(df):
 
 def calculate_acceptable_value_max(rolling_window):
     sorted_values = pd.Series(rolling_window).sort_values(ascending=False)
-    quartile_size = int(len(sorted_values) * 0.25)
+    quartile_size = int(len(sorted_values) * 0.1)
     
     if quartile_size == 0:
         return None
@@ -34,7 +34,7 @@ def calculate_acceptable_value_max(rolling_window):
 # Função para calcular o valor aceitável mínimo
 def calculate_acceptable_value_min(rolling_window):
     sorted_values = pd.Series(rolling_window).sort_values(ascending=False)
-    quartile_size = int(len(sorted_values) * 0.25)
+    quartile_size = int(len(sorted_values) * 0.1)
     
     if quartile_size == 0:
         return None
@@ -57,13 +57,15 @@ def generate_close_return(df, period):
 
     return df
 
-def generate_percentage_by_model(resultado_df, model):
-  filtered_df = resultado_df[resultado_df[f'Acerto_{model}'] == 'Sim']
-  percentage = (len(filtered_df) / len(resultado_df)) * 100
+def generate_percentage_by_model(result_df, model):
+  result_valid = result_df[result_df[f'Decisao_{model}'] != 'Manter']
+  print(f'Valor total apurado no modelo {model}: {len(result_valid)}')
+  filtered_df = result_valid[result_valid[f'Acerto_{model}'] == 'Sim']
+  percentage = (len(filtered_df) / len(result_valid)) * 100
   return percentage
 
-def calculates_gain_by_model(resultado_df, model):
-    filtered_df = resultado_df[resultado_df[f'Acerto_{model}'] == 'Sim']
+def calculates_gain_by_model(result_df, model):
+    filtered_df = result_df[result_df[f'Acerto_{model}'] == 'Sim']
 
     # Função condicional para tratar as decisões
     def compute_gain(row):

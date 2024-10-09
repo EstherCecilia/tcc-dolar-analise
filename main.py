@@ -18,7 +18,7 @@ function_by_model = {
 }
 
 
-def run(period, path, percent = 0.2):
+def run(period, path, percent = 0.8):
     # Lê os dados do arquivo CSV
     filepath = f'dados/{path}.csv'
     df = preprocessing.get_data(filepath)
@@ -33,7 +33,7 @@ def run(period, path, percent = 0.2):
     data = primeiros_x_porcento
 
     # Adiciona o fechamento futuro e o retorno
-    data = preprocessing.generate_close_return(data)  
+    data = preprocessing.generate_close_return(data, period)  
 
 
     # (SMA, EMA, VWAP)
@@ -43,13 +43,13 @@ def run(period, path, percent = 0.2):
 
     # Adicionar acurácia por ganho ou perda por porcentagem
     for model in function_by_model.keys():
-        percentage = preprocessing.valid_percentage(data, model)
+        percentage = preprocessing.generate_percentage_by_model(data, model)
         print(f"Percentagem de acertos de {model}: {percentage:.2f}%")
 
 
     # Adicionar acurácia por ganho ou perda por valor
     for model in function_by_model.keys():
-        gain = preprocessing.calculates_gain(data, model)
+        gain = preprocessing.calculates_gain_by_model(data, model)
         print(f"Ganho de {model}: {gain:.2f}")
  
 
