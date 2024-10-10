@@ -1,5 +1,7 @@
 import pandas as pd
 
+PERCENT_ACCEPTABLE = 0.1
+
 def get_data(filepath):
     # Lê os dados de um arquivo CSV com codificação alternativa.
     return pd.read_csv(filepath, sep=';', header=0, encoding='ISO-8859-1', on_bad_lines='skip')
@@ -24,7 +26,7 @@ def normalize_data(df):
 
 def calculate_acceptable_value_max(rolling_window):
     sorted_values = pd.Series(rolling_window).sort_values(ascending=False)
-    quartile_size = int(len(sorted_values) * 0.1)
+    quartile_size = int(len(sorted_values) * PERCENT_ACCEPTABLE)
     
     if quartile_size == 0:
         return None
@@ -34,7 +36,7 @@ def calculate_acceptable_value_max(rolling_window):
 # Função para calcular o valor aceitável mínimo
 def calculate_acceptable_value_min(rolling_window):
     sorted_values = pd.Series(rolling_window).sort_values(ascending=False)
-    quartile_size = int(len(sorted_values) * 0.1)
+    quartile_size = int(len(sorted_values) * PERCENT_ACCEPTABLE)
     
     if quartile_size == 0:
         return None

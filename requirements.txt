@@ -1,7 +1,6 @@
 pandas
 numpy
-statsmodels
-scikit-learn
+keras
 tensorflow
-pandas_ta
-warnings
+statsmodels
+scikit-learn==1.5.2
