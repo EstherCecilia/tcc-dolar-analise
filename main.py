@@ -40,17 +40,25 @@ def run(period, path, percent = 0.8):
     for model in function_by_model:
         data = function_by_model[model](data, period)
 
-
-    # Adicionar acurácia por ganho ou perda por porcentagem
-    for model in function_by_model.keys():
-        percentage = preprocessing.generate_percentage_by_model(data, model)
-        print(f"Percentagem de acertos de {model}: {percentage:.2f}%")
+    # Caminho para salvar o arquivo
+    file_path = f"results/{path}_{period}_accuracy_and_gain.txt"
 
 
-    # Adicionar acurácia por ganho ou perda por valor
-    for model in function_by_model.keys():
-        gain = preprocessing.calculates_gain_by_model(data, model)
-        print(f"Ganho de {model}: {gain:.2f}")
+    # Abre o arquivo no modo de escrita ('w' sobrescreve o arquivo, 'a' adiciona ao final)
+    with open(file_path, 'w') as f:
+        # Adicionar acurácia por ganho ou perda por porcentagem
+        for model in function_by_model.keys():
+            percentage = preprocessing.generate_percentage_by_model(data, model)
+            output_percentage = f"Percentagem de acertos de {model}: {percentage:.2f}%"
+            print(output_percentage)
+            f.write(output_percentage + '\n')  # Escreve a saída no arquivo
+        
+        # Adicionar acurácia por ganho ou perda por valor
+        for model in function_by_model.keys():
+            gain = preprocessing.calculates_gain_by_model(data, model)
+            output_gain = f"Ganho de {model}: {gain:.2f}"
+            print(output_gain)
+            f.write(output_gain + '\n')  # Escreve a saída no arquivo
  
 
     data_filtered = data.drop(columns=['valor_aceitavel_fechamento_max', 'valor_aceitavel_fechamento_min', 'valor_aceitavel_retorno_max', 'valor_aceitavel_retorno_min'])

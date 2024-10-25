@@ -25,6 +25,8 @@ def normalize_data(df):
     return df
 
 def calculate_acceptable_value_max(rolling_window):
+    if len(rolling_window) <= 15:
+        return rolling_window.iloc[0]
     sorted_values = pd.Series(rolling_window).sort_values(ascending=False)
     quartile_size = int(len(sorted_values) * PERCENT_ACCEPTABLE)
     
@@ -35,6 +37,8 @@ def calculate_acceptable_value_max(rolling_window):
 
 # Função para calcular o valor aceitável mínimo
 def calculate_acceptable_value_min(rolling_window):
+    if len(rolling_window) <= 15:
+        return rolling_window.iloc[-1]
     sorted_values = pd.Series(rolling_window).sort_values(ascending=False)
     quartile_size = int(len(sorted_values) * PERCENT_ACCEPTABLE)
     
@@ -62,6 +66,9 @@ def generate_close_return(df, period):
 def generate_percentage_by_model(result_df, model):
   result_valid = result_df[result_df[f'Decisao_{model}'] != 'Manter']
   print(f'Valor total apurado no modelo {model}: {len(result_valid)}')
+  if len(result_valid) == 0:
+        return 0
+        
   filtered_df = result_valid[result_valid[f'Acerto_{model}'] == 'Sim']
   percentage = (len(filtered_df) / len(result_valid)) * 100
   return percentage
