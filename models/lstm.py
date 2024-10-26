@@ -63,7 +63,7 @@ def predict_future(df, model, scaler, period):
 
     return df
 
-def execute(df, period=30, epochs=10, batch_size=32):
+def execute(df, period=30, epochs=5, batch_size=2):
     # Preparar os dados para treino
     X_train, y_train, scaler = prepare_data(df, period)
 

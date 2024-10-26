@@ -5,6 +5,7 @@ import models.arima as arima
 import models.average as average
 import models.preprocessing as preprocessing
 import models.lstm as lstm
+import models.decisions as decisions
 
 # Suprimir todos os warnings
 warnings.filterwarnings('ignore')
@@ -18,7 +19,9 @@ function_by_model = {
 }
 
 
-def run(period, path, percent = 0.8):
+function_combined_model = ['SMA_EMA', 'SMA_EMA_VWAP', 'VWAP_LSTM', 'VWAP_ARIMA', 'LSTM_ARIMA', 'SMA_EMA_VWAP_LSTM_ARIMA']
+
+def run(period, path, percent = 1):
     # Lê os dados do arquivo CSV
     filepath = f'dados/{path}.csv'
     df = preprocessing.get_data(filepath)
@@ -40,6 +43,10 @@ def run(period, path, percent = 0.8):
     for model in function_by_model:
         data = function_by_model[model](data, period)
 
+    for model in function_combined_model:
+        data = decisions.generate_decicion_by_combination_models(data, model)
+        data = decisions.check_hits(data, [model])
+
     # Caminho para salvar o arquivo
     file_path = f"results/{path}_{period}_accuracy_and_gain.txt"
 
@@ -47,7 +54,8 @@ def run(period, path, percent = 0.8):
     # Abre o arquivo no modo de escrita ('w' sobrescreve o arquivo, 'a' adiciona ao final)
     with open(file_path, 'w') as f:
         # Adicionar acurácia por ganho ou perda por porcentagem
-        for model in function_by_model.keys():
+        models = list(function_by_model.keys()) + function_combined_model
+        for model in models:
             percentage = preprocessing.generate_percentage_by_model(data, model)
             output_percentage = f"Percentagem de acertos de {model}: {percentage:.2f}%"
             print(output_percentage)
@@ -68,8 +76,13 @@ def run(period, path, percent = 0.8):
     data_filtered.to_csv(file_path_result, index=False, sep=';', encoding='utf-8')
 
 
-# run(30, 'ABEV3_B_0_1min')
-run(30, 'IBOV_B_0_1min')
+run(2,'WDOFUT_F_0_1min')
+run(5,'WDOFUT_F_0_1min')
+run(15,'WDOFUT_F_0_1min')
+run(30,'WDOFUT_F_0_1min')
+run(45,'WDOFUT_F_0_1min')
+run(60,'WDOFUT_F_0_1min')
+run(24,'WDOFUT_F_0_60min')
 
 # Orientações:
 # porcentagem ideal: 54%

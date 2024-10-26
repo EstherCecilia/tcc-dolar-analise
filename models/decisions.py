@@ -2,7 +2,18 @@ def within_the_threshold(return_value, max, min):
     return_value = abs(return_value) # Módulo
     return return_value >= min and return_value <= max
 
+def decision_by_combination(row, models):
+    decisions = [row[f'Decisao_{model}'] for model in models]
+    # Verifica se todas as decisões são iguais
+    if len(set(decisions)) == 1:
+        return decisions[0]  # Retorna a decisão única
+    return 'Manter'
 
+def generate_decicion_by_combination_models(df, model):
+    models = model.split('_')
+    df[f'Decisao_{model}'] = df.apply(lambda row: decision_by_combination(row, models), axis=1)
+    return df
+    
 # Função para determinar a decisão com base em um indicador específico
 def decision_by_per(row, model):
     close = row['Fechamento']
