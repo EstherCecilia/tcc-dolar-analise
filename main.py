@@ -23,10 +23,12 @@ function_combined_model = ['SMA_EMA', 'SMA_EMA_VWAP', 'VWAP_LSTM', 'VWAP_ARIMA',
 
 def run(period, path, percent = 1):
     # Lê os dados do arquivo CSV
+    print('Reading data from CSV file...')
     filepath = f'dados/{path}.csv'
     df = preprocessing.get_data(filepath)
 
     # Normaliza os dados
+    print('Normalizing data...')
     df = preprocessing.normalize_data(df)
 
 
@@ -36,21 +38,24 @@ def run(period, path, percent = 1):
     data = primeiros_x_porcento
 
     # Adiciona o fechamento futuro e o retorno
+    print('Generating close and return values...')
     data = preprocessing.generate_close_return(data, period)  
 
 
     # (SMA, EMA, VWAP)
     for model in function_by_model:
+        print(f'Running {model} model...')
         data = function_by_model[model](data, period)
 
     for model in function_combined_model:
+        print(f'Running {model} model...')
         data = decisions.generate_decicion_by_combination_models(data, model)
         data = decisions.check_hits(data, [model])
 
     # Caminho para salvar o arquivo
     file_path = f"results/{path}_{period}_accuracy_and_gain.txt"
 
-
+    print('Generating accuracy and gain values...')
     # Abre o arquivo no modo de escrita ('w' sobrescreve o arquivo, 'a' adiciona ao final)
     with open(file_path, 'w') as f:
         # Adicionar acurácia por ganho ou perda por porcentagem
