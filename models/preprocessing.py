@@ -1,6 +1,6 @@
 import pandas as pd
 
-PERCENT_ACCEPTABLE = 0.1
+PERCENT_ACCEPTABLE = 0.25
 
 def get_data(filepath):
     # Lê os dados de um arquivo CSV com codificação alternativa.
@@ -20,7 +20,7 @@ def normalize_data(df):
     for coluna in colunas_para_converter:
         df[coluna] = limpar_e_converter_coluna(df[coluna])
 
-    df = df.sort_values('Data', ascending=True)
+    df = df.iloc[::-1]
 
     return df
 
@@ -73,22 +73,27 @@ def generate_percentage_by_model(result_df, model):
   percentage = (len(filtered_df) / len(result_valid)) * 100
   return percentage
 
-def calculates_gain_by_model(result_df, model):
-    filtered_df = result_df[result_df[f'Acerto_{model}'] == 'Sim']
+def round_to_05(return_value):
+    if return_value is None or pd.isna(return_value):
+      return 0
+      
+    return round(return_value * 2) / 2
 
+def calculates_gain_by_model(result_df, model):
     # Função condicional para tratar as decisões
     def compute_gain(row):
-        if row[f'Decisao_{model}'] == 'Venda' and row['Retorno'] < 0: # Quando for Venda e o Retorno negativo  -> Somar Módulo
-            return abs(row['Retorno'])
-        elif row[f'Decisao_{model}'] == 'Venda' and row['Retorno'] > 0: 
-            return -abs(row['Retorno'])
-        elif row[f'Decisao_{model}'] == 'Manter': # Ignorar quando for "Manter"
-            return 0  
-        else:
-            return row['Retorno']  # Somar o restante normalmente
+        retorno = round_to_05(row['Retorno'])
 
+        if row[f'Decisao_{model}'] == 'Venda' and retorno < 0: # Quando for Venda e o Retorno negativo  -> Somar Módulo
+            return abs(retorno) * 10
+        elif row[f'Decisao_{model}'] == 'Venda' and retorno > 0:
+            return -abs(retorno)  * 10
+        elif row[f'Decisao_{model}'] == 'Manter': # Ignorar quando for "Manter"
+            return 0
+        else:
+            return retorno * 10 # Somar o restante normalmente
     # Aplicar a função para calcular os ganhos
-    filtered_df['Retorno_Ajustado'] = filtered_df.apply(compute_gain, axis=1)
-    gain = filtered_df['Retorno_Ajustado'].sum()
+    result_df['Retorno_Ajustado'] = result_df.apply(compute_gain, axis=1)
+    gain = result_df['Retorno_Ajustado'].sum()
 
     return gain

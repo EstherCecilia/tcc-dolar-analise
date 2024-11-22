@@ -47,8 +47,8 @@ def check_hit(row, model):
         return 'Sim'
 
     if (future_return > 0 and decision == 'Compra') or \
-       (future_return < 0 and decision == 'Venda') or \
-       (future_return == 0 and decision == 'Manter'):
+       (future_return <= 0 and decision == 'Venda') or \
+       (decision == 'Manter'):
         return 'Sim'
     else:
         return 'Não'
